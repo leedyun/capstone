@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 회상 다이어리
 
 회상 다이어리는 일상을 기록하고 회상할 수 있는 웹 애플리케이션입니다.
@@ -78,3 +79,6 @@ python manage.py runsslserver --certificate certificates/cert.pem --key certific
 ## 라이선스
 
 이 프로젝트는 MIT 라이선스를 따릅니다.
+=======
+# capstone
+>>>>>>> 748cf36cc464d301c6fea1103c15dff2bd1b66e5
