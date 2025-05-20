@@ -33,6 +33,7 @@ from django.contrib.auth import authenticate
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth import login as auth_login
 from django.views import View
+import jwt
 
 logger = logging.getLogger(__name__)
 
@@ -55,123 +56,75 @@ class ProfileView(LoginRequiredMixin, TemplateView):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def kakao_login(request):
+    client_id = '6242b32743c06796acdfd168cd435126'
+    redirect_uri = 'https://localhost:8000/api/oauth/callback/'
+    return redirect(
+        f"https://kauth.kakao.com/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code"
+    )
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def kakao_callback(request):
     try:
         code = request.GET.get("code")
         if not code:
-            logger.error("No authorization code provided")
-            return HttpResponseRedirect(f'{settings.KAKAO_REDIRECT_URI}?error=no_code')
+            return JsonResponse({"error": "No code provided"}, status=400)
 
-        logger.info("Starting Kakao login process")
-        logger.debug(f"Received authorization code: {code[:10]}...")
-
-        # Exchange authorization code for access token
-        logger.debug("Requesting Kakao access token")
-        token_url = "https://kauth.kakao.com/oauth/token"
-        data = {
-            "grant_type": "authorization_code",
-            "client_id": settings.SOCIALACCOUNT_PROVIDERS['kakao']['APP']['client_id'],
-            "redirect_uri": settings.KAKAO_REDIRECT_URI,
-            "code": code,
-        }
-        logger.debug(f"Token request data: {data}")
+        client_id = '6242b32743c06796acdfd168cd435126'
+        redirect_uri = 'https://localhost:8000/api/oauth/callback/'
         
-        token_response = requests.post(token_url, data=data)
-        if not token_response.ok:
-            logger.error(f"Kakao token error: {token_response.status_code} - {token_response.text}")
-            return HttpResponseRedirect(f'{settings.KAKAO_REDIRECT_URI}?error=token_error')
-            
-        token_data = token_response.json()
-        access_token = token_data.get("access_token")
-        if not access_token:
-            logger.error("No access token in response")
-            return HttpResponseRedirect(f'{settings.KAKAO_REDIRECT_URI}?error=no_token')
-            
-        logger.debug("Successfully received Kakao access token")
-
-        # Get user info from Kakao
-        logger.debug("Requesting Kakao user info")
-        user_info_url = "https://kapi.kakao.com/v2/user/me"
-        headers = {"Authorization": f"Bearer {access_token}"}
-        user_info_response = requests.get(user_info_url, headers=headers)
-        if not user_info_response.ok:
-            logger.error(f"Kakao user info error: {user_info_response.status_code} - {user_info_response.text}")
-            return HttpResponseRedirect(f'{settings.KAKAO_REDIRECT_URI}?error=user_info_error')
-            
-        user_info = user_info_response.json()
-        logger.debug("Successfully received Kakao user info")
-
-        kakao_id = str(user_info.get("id"))
-        if not kakao_id:
-            logger.error("No Kakao ID in user info")
-            return HttpResponseRedirect(f'{settings.KAKAO_REDIRECT_URI}?error=no_kakao_id')
-            
-        logger.debug(f"Received user info for Kakao ID: {kakao_id}")
-
-        # Get or create user
+        # 카카오 토큰 받기
+        token_request = requests.get(
+            f"https://kauth.kakao.com/oauth/token?grant_type=authorization_code&client_id={client_id}&redirect_uri={redirect_uri}&code={code}"
+        )
+        token_json = token_request.json()
+        error = token_json.get("error", None)
+        if error is not None:
+            return JsonResponse({"error": "INVALID_CODE"}, status=400)
+        
+        access_token = token_json.get("access_token")
+        
+        # 카카오 사용자 정보 받기
+        profile_request = requests.get(
+            "https://kapi.kakao.com/v2/user/me",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        profile_json = profile_request.json()
+        
+        kakao_account = profile_json.get("kakao_account", {})
+        profile = kakao_account.get("profile", {})
+        nickname = profile.get("nickname", "User")
+        
+        # 카카오 ID를 사용하여 사용자 식별
+        kakao_id = str(profile_json.get("id"))
+        
         try:
+            # 카카오 ID로 사용자 찾기
             user = User.objects.get(social_login_id=kakao_id)
-            logger.debug(f"Found existing user: {user.username}")
         except User.DoesNotExist:
-            logger.debug(f"Creating new user for Kakao ID: {kakao_id}")
-            kakao_account = user_info.get("kakao_account", {})
-            profile = kakao_account.get("profile", {})
-            
-            username = f"kakao_{kakao_id}"
-            temp_password = str(uuid.uuid4())
-            try:
-                user = User.objects.create_user(
-                    username=username,
-                    password=temp_password,
-                    social_login_id=kakao_id,
-                    name=profile.get("nickname", ""),
-                    birth_date=None,
-                    gender=None,
-                    is_profile_completed=False
-                )
-                logger.debug(f"Created new user: {user.username}")
-
-                # Create social account
-                SocialAccount.objects.create(
-                    user=user,
-                    provider='kakao',
-                    uid=kakao_id,
-                    extra_data=user_info
-                )
-            except Exception as e:
-                logger.error(f"Error creating user: {str(e)}")
-                return HttpResponseRedirect(f'{settings.KAKAO_REDIRECT_URI}?error=user_creation_error')
-
-        # Generate JWT token
-        try:
-            refresh = RefreshToken.for_user(user)
-            access_token = str(refresh.access_token)
-            logger.debug("Generated JWT token")
-
-            # 프론트엔드로 리다이렉션
-            frontend_url = 'http://localhost:5173'
-            redirect_path = '/profile' if not user.is_profile_completed else '/home'
-            response = HttpResponseRedirect(f"{frontend_url}{redirect_path}")
-            
-            # JWT 토큰을 쿠키에 설정
-            response.set_cookie(
-                'access_token',
-                access_token,
-                max_age=86400,  # 1일
-                httponly=True,
-                samesite='Lax',
-                secure=True  # HTTPS 사용시 True
+            # 새 사용자 생성
+            user = User.objects.create(
+                username=f"kakao_{kakao_id}",
+                name=nickname,
+                social_login_id=kakao_id
             )
-            
-            return response
-        except Exception as e:
-            logger.error(f"Error generating JWT token: {str(e)}")
-            return HttpResponseRedirect(f'{settings.KAKAO_REDIRECT_URI}?error=token_generation_error')
-
+            user.set_unusable_password()
+            user.save()
+        
+        # JWT 토큰 생성
+        token = jwt.encode(
+            {'user_id': user.id},
+            settings.SECRET_KEY,
+            algorithm='HS256'
+        )
+        
+        # 프론트엔드로 리다이렉트하면서 토큰을 URL 파라미터로 전달
+        frontend_url = 'https://localhost:5174/home'
+        return redirect(f"{frontend_url}?token={token}")
+        
     except Exception as e:
-        logger.error("Error during user creation/login process", exc_info=True)
-        error_message = str(e)
-        logger.error(f"Detailed error: {error_message}")
-        return HttpResponseRedirect(f'{settings.KAKAO_REDIRECT_URI}?error=login_failed&message={error_message}')
+        logger.error(f"Kakao callback error: {str(e)}")
+        return JsonResponse({"error": str(e)}, status=400)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -565,5 +518,5 @@ def login_error(request):
     message = request.GET.get('message', '')
     
     # Redirect to frontend with error parameters
-    frontend_url = 'http://localhost:5173'  # Vite development server
+    frontend_url = 'https://localhost:5174'  # Vite development server
     return HttpResponseRedirect(f'{frontend_url}/login?error={error}&message={message}')

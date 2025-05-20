@@ -167,7 +167,8 @@ SOCIALACCOUNT_AUTO_SIGNUP = True
 
 # CORS 설정
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
+    "https://localhost:5174",
+    "https://localhost:5173",
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken']
@@ -283,7 +284,7 @@ LOGGING = {
 AUTH_USER_MODEL = 'kittiary.User'
 
 # 카카오 로그인 설정
-KAKAO_REDIRECT_URI = "https://localhost:5173/api/oauth/login"
+KAKAO_REDIRECT_URI = "https://localhost:5174/api/oauth/login"
 
 SOCIALACCOUNT_PROVIDERS = {
     'kakao': {

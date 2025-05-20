@@ -16,28 +16,19 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include, re_path
-from kittiary import views
 from django.conf import settings
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from django.conf.urls.static import static
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="회상 다이어리 API",
+        title="Kittiary API",
         default_version='v1',
-        description="""회상 다이어리 API 문서입니다.
-        
-일기 작성, 조회, 수정, 삭제 등의 기능을 제공합니다.
-
-## 주요 기능
-- 일기 CRUD
-- 월별 일기 조회
-- 가족 관계 관리
-- 통계 조회
-        """,
+        description="Kittiary API documentation",
         terms_of_service="https://www.google.com/policies/terms/",
-        contact=openapi.Contact(email="contact@snippets.local"),
+        contact=openapi.Contact(email="contact@kittiary.com"),
         license=openapi.License(name="BSD License"),
     ),
     public=True,
@@ -46,26 +37,17 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("accounts/", include("allauth.urls")),
-    path('', views.index, name="index"),
-    path('home/', views.home, name="home"),
-    path('profile/', views.ProfileView.as_view(), name="profile"),
-    path('api/v1/', include('kittiary.urls')),
-    path('api/oauth/login', views.kakao_login, name='kakao_login'),
-    path('login', views.login_error, name='login_error'),
-    path("api/v1/auth/", include("dj_rest_auth.urls")),   # /login /logout /refresh
-    path("api/v1/auth/registration/", include("dj_rest_auth.registration.urls")),
-    
-    # Swagger UI
-    re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
+    path('accounts/', include('allauth.urls')),
+    path('api/', include('kittiary.urls')),  # kittiary 앱의 URL 패턴 포함
+    path('api/auth/', include('dj_rest_auth.urls')),
+    path('api/auth/registration/', include('dj_rest_auth.registration.urls')),
+    path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:
     from django.views.generic import TemplateView
     urlpatterns += [
-        path('', TemplateView.as_view(template_name='index.html')),
-        path('home/', TemplateView.as_view(template_name='home.html'), name='home'),
-        path('profile/', TemplateView.as_view(template_name='profile.html'), name='profile'),
+        path('', include('kittiary.urls')),  # 템플릿 뷰 URL 패턴 포함
     ]

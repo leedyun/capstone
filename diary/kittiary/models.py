@@ -7,8 +7,8 @@ class User(AbstractUser):
     
     social_login_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
     name = models.CharField(max_length=100, null=True, blank=True)
-    birth_date = models.DateField(null=True)
-    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, null=True)
+    birth_date = models.DateField(null=True, blank=True)
+    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, null=True, blank=True)
     is_profile_completed = models.BooleanField(default=False)
 
     # Fix for reverse accessor clashes
