@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>회상 다이어리</title>
+    <style>
+      body {
+        font-family: "Noto Sans KR", sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f5f5f5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+      .container {
+        background: white;
+        padding: 40px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        max-width: 500px;
+        width: 100%;
+      }
+      h1 {
+        color: #333;
+        margin-bottom: 30px;
+      }
+      .login-button {
+        background-color: #fee500;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 5px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 20px auto;
+        font-weight: bold;
+        color: #000000;
+        text-decoration: none;
+        width: 100%;
+        max-width: 300px;
+      }
+      .login-button:hover {
+        background-color: #ffd700;
+      }
+      .login-button img {
+        margin-right: 10px;
+        height: 20px;
+      }
+      #loginStatus {
+        margin-top: 20px;
+        padding: 10px;
+        border-radius: 5px;
+        display: none;
+      }
+      .loading {
+        display: none;
+        margin: 20px 0;
+      }
+      .loading::after {
+        content: "";
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>회상 다이어리</h1>
+      <p>회상으로 일상을 기록해보아요요</p>
+
+      <a
+        href="https://kauth.kakao.com/oauth/authorize?client_id=6884db54552b63a8a0cbed04b710e2e2&redirect_uri=http://localhost:8000/api/oauth/login&response_type=code"
+        class="login-button"
+        id="kakaoLoginBtn"
+      >
+        <img
+          src="https://developers.kakao.com/assets/img/about/logos/kakao/channel_logo_yellow.png"
+          alt="카카오 로고"
+        />
+        카카오로 시작하기
+      </a>
+
+      <div id="loginStatus"></div>
+      <div class="loading" id="loadingSpinner"></div>
+    </div>
+
+    <script>
+      const loginStatus = document.getElementById("loginStatus");
+      const loadingSpinner = document.getElementById("loadingSpinner");
+      const kakaoLoginBtn = document.getElementById("kakaoLoginBtn");
+
+      // URL에서 쿼리 파라미터 확인
+      const urlParams = new URLSearchParams(window.location.search);
+
+      // 카카오 로그인 처리 함수
+      async function handleKakaoLogin() {
+        try {
+          loadingSpinner.style.display = "block";
+          kakaoLoginBtn.style.display = "none";
+          loginStatus.style.display = "block";
+          loginStatus.textContent = "로그인 처리 중...";
+          loginStatus.style.backgroundColor = "#e8f4f8";
+
+          const response = await fetch(
+            "http://localhost:8000/api/oauth/login" + window.location.search,
+            {
+              headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+              },
+              credentials: "include",
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error("로그인 처리 중 오류가 발생했습니다.");
+          }
+
+          loginStatus.style.backgroundColor = "#e8f8e8";
+          loginStatus.textContent = "로그인 성공! 이동 중...";
+
+          // 프로필 페이지로 리다이렉트
+          window.location.href = "http://localhost:8000/profile";
+        } catch (error) {
+          console.error("로그인 처리 중 오류:", error);
+          loginStatus.style.backgroundColor = "#f8e8e8";
+          loginStatus.textContent =
+            error.message || "로그인 처리 중 오류가 발생했습니다.";
+          loadingSpinner.style.display = "none";
+          kakaoLoginBtn.style.display = "flex";
+        }
+      }
+
+      // 카카오 로그인 코드가 있는 경우 처리
+      if (urlParams.get("code")) {
+        handleKakaoLogin();
+      }
+    </script>
+  </body>
+</html>

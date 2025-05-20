@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>프로필 설정 - 회상 다이어리</title>
+    <style>
+      body {
+        font-family: "Noto Sans KR", sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 30px;
+      }
+      .form-group {
+        margin-bottom: 20px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      input,
+      select {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+      .checkbox-group {
+        margin-top: 10px;
+      }
+      .checkbox-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .checkbox-item input[type="checkbox"] {
+        width: auto;
+        margin-right: 8px;
+      }
+      .checkbox-item label {
+        font-weight: normal;
+        margin-bottom: 0;
+      }
+      button {
+        background-color: #4caf50;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        width: 100%;
+        font-size: 16px;
+        margin-top: 20px;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+      .error-message {
+        color: red;
+        margin-top: 10px;
+        text-align: center;
+      }
+      .section-title {
+        margin-top: 30px;
+        margin-bottom: 15px;
+        color: #333;
+        font-size: 1.2em;
+      }
+      #noFamilyOption {
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+      }
+      .family-name-input {
+        margin-top: 5px;
+        margin-left: 25px;
+        display: none;
+      }
+      .family-name-input input,
+      .family-name-input select {
+        width: calc(100% - 25px);
+        margin-bottom: 5px;
+      }
+    </style>
+    {% csrf_token %}
+  </head>
+  <body>
+    <div class="container">
+      <h1>프로필 설정</h1>
+      <form id="profileForm">
+        <div class="form-group">
+          <label for="name">이름</label>
+          <input type="text" id="name" name="name" required />
+        </div>
+        <div class="form-group">
+          <label for="birth_date">생년월일</label>
+          <input type="date" id="birth_date" name="birth_date" required />
+        </div>
+        <div class="form-group">
+          <label for="gender">성별</label>
+          <select id="gender" name="gender" required>
+            <option value="">선택하세요</option>
+            <option value="M">남성</option>
+            <option value="F">여성</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <div class="section-title">가족 관계</div>
+          <div class="checkbox-group" id="familyRelations">
+            <div class="checkbox-item">
+              <input
+                type="checkbox"
+                id="spouse"
+                name="family_relations"
+                value="spouse"
+              />
+              <label for="spouse">배우자</label>
+              <div class="family-name-input" id="spouse_name_div">
+                <input
+                  type="text"
+                  placeholder="이름을 입력하세요"
+                  id="spouse_name"
+                />
+                <select id="spouse_gender">
+                  <option value="">성별 선택 (선택사항)</option>
+                  <option value="M">남성</option>
+                  <option value="F">여성</option>
+                </select>
+              </div>
+            </div>
+            <div class="checkbox-item">
+              <input
+                type="checkbox"
+                id="children"
+                name="family_relations"
+                value="children"
+              />
+              <label for="children">자녀</label>
+              <div class="family-name-input" id="children_name_div">
+                <input
+                  type="text"
+                  placeholder="이름을 입력하세요"
+                  id="children_name"
+                />
+                <select id="children_gender">
+                  <option value="">성별 선택 (선택사항)</option>
+                  <option value="M">남성</option>
+                  <option value="F">여성</option>
+                </select>
+              </div>
+            </div>
+            <div class="checkbox-item">
+              <input
+                type="checkbox"
+                id="siblings"
+                name="family_relations"
+                value="siblings"
+              />
+              <label for="siblings">형제자매</label>
+              <div class="family-name-input" id="siblings_name_div">
+                <input
+                  type="text"
+                  placeholder="이름을 입력하세요"
+                  id="siblings_name"
+                />
+                <select id="siblings_gender">
+                  <option value="">성별 선택 (선택사항)</option>
+                  <option value="M">남성</option>
+                  <option value="F">여성</option>
+                </select>
+              </div>
+            </div>
+            <div class="checkbox-item">
+              <input
+                type="checkbox"
+                id="parents"
+                name="family_relations"
+                value="parents"
+              />
+              <label for="parents">부모님</label>
+              <div class="family-name-input" id="parents_name_div">
+                <input
+                  type="text"
+                  placeholder="이름을 입력하세요"
+                  id="parents_name"
+                />
+                <select id="parents_gender">
+                  <option value="">성별 선택 (선택사항)</option>
+                  <option value="M">남성</option>
+                  <option value="F">여성</option>
+                </select>
+              </div>
+            </div>
+            <div class="checkbox-item">
+              <input
+                type="checkbox"
+                id="grandparents"
+                name="family_relations"
+                value="grandparents"
+              />
+              <label for="grandparents">조부모</label>
+              <div class="family-name-input" id="grandparents_name_div">
+                <input
+                  type="text"
+                  placeholder="이름을 입력하세요"
+                  id="grandparents_name"
+                />
+                <select id="grandparents_gender">
+                  <option value="">성별 선택 (선택사항)</option>
+                  <option value="M">남성</option>
+                  <option value="F">여성</option>
+                </select>
+              </div>
+            </div>
+            <div class="checkbox-item">
+              <input
+                type="checkbox"
+                id="others"
+                name="family_relations"
+                value="others"
+              />
+              <label for="others">기타</label>
+              <div class="family-name-input" id="others_name_div">
+                <input
+                  type="text"
+                  placeholder="이름을 입력하세요"
+                  id="others_name"
+                />
+                <select id="others_gender">
+                  <option value="">성별 선택 (선택사항)</option>
+                  <option value="M">남성</option>
+                  <option value="F">여성</option>
+                </select>
+              </div>
+            </div>
+            <div class="checkbox-item" id="noFamilyOption">
+              <input
+                type="checkbox"
+                id="no_family"
+                name="family_relations"
+                value="no_family"
+              />
+              <label for="no_family"
+                >가족이 없습니다/가입하고 싶지 않습니다</label
+              >
+            </div>
+          </div>
+        </div>
+
+        <button type="submit">저장하기</button>
+        <div id="errorMessage" class="error-message"></div>
+      </form>
+    </div>
+
+    <script>
+      // 가족관계 체크박스 상호 배제 처리
+      document
+        .getElementById("no_family")
+        .addEventListener("change", function (e) {
+          const familyCheckboxes = document.querySelectorAll(
+            'input[name="family_relations"]:not(#no_family)'
+          );
+          familyCheckboxes.forEach((checkbox) => {
+            checkbox.disabled = e.target.checked;
+            if (e.target.checked) {
+              checkbox.checked = false;
+              // 이름 입력 필드 숨기기
+              document.getElementById(`${checkbox.id}_name_div`).style.display =
+                "none";
+            }
+          });
+        });
+
+      // 체크박스 변경 시 이름 입력 필드 표시/숨김 처리
+      document
+        .querySelectorAll('input[name="family_relations"]:not(#no_family)')
+        .forEach((checkbox) => {
+          checkbox.addEventListener("change", function (e) {
+            const nameDiv = document.getElementById(`${e.target.id}_name_div`);
+            nameDiv.style.display = e.target.checked ? "block" : "none";
+
+            if (e.target.checked) {
+              document.getElementById("no_family").checked = false;
+            }
+          });
+        });
+
+      document
+        .getElementById("profileForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const errorMessage = document.getElementById("errorMessage");
+
+          try {
+            const selectedRelations = Array.from(
+              document.querySelectorAll(
+                'input[name="family_relations"]:checked'
+              )
+            )
+              .map((checkbox) => {
+                // 가족 없음 옵션 선택 시 빈 배열 반환
+                if (checkbox.value === "no_family") {
+                  return [];
+                }
+
+                // 가족관계 매핑
+                const relationshipMap = {
+                  spouse: "SPOUSE",
+                  children: "CHILD",
+                  siblings: "SIBLING",
+                  parents: "PARENT",
+                  grandparents: "GRANDPARENT",
+                  others: "OTHER",
+                };
+
+                // 이름 입력값 가져오기
+                const nameInput = document.getElementById(
+                  `${checkbox.id}_name`
+                );
+                const name = nameInput ? nameInput.value.trim() : "";
+
+                // 성별 선택값 가져오기
+                const genderSelect = document.getElementById(
+                  `${checkbox.id}_gender`
+                );
+                const gender = genderSelect ? genderSelect.value : "";
+
+                return {
+                  name: name || null, // 이름이 비어있으면 null 사용
+                  relationship: relationshipMap[checkbox.value],
+                  gender: gender || null, // 성별이 선택되지 않았으면 null
+                };
+              })
+              .flat(); // 빈 배열을 flatten
+
+            const formData = {
+              name: document.getElementById("name").value,
+              birth_date: document.getElementById("birth_date").value,
+              gender: document.getElementById("gender").value,
+              families: selectedRelations,
+            };
+
+            const response = await fetch("/api/v1/users/profile/", {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+              },
+              credentials: "include",
+              body: JSON.stringify(formData),
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              if (data.is_profile_completed) {
+                window.location.href = "/home";
+              } else {
+                errorMessage.textContent = "필수 정보를 모두 입력해주세요.";
+              }
+            } else {
+              const data = await response.json();
+              errorMessage.textContent =
+                data.error || "프로필 저장에 실패했습니다.";
+            }
+          } catch (error) {
+            console.error("프로필 저장 중 오류:", error);
+            errorMessage.textContent = "서버와의 통신 중 오류가 발생했습니다.";
+          }
+        });
+
+      // 현재 사용자 정보 로드
+      async function loadUserProfile() {
+        try {
+          const response = await fetch("/api/v1/users/me/", {
+            headers: {
+              Accept: "application/json",
+            },
+            credentials: "include",
+          });
+
+          if (response.ok) {
+            const userData = await response.json();
+            document.getElementById("name").value = userData.name || "";
+            document.getElementById("birth_date").value =
+              userData.birth_date || "";
+            document.getElementById("gender").value = userData.gender || "";
+
+            // 가족 관계 체크박스 설정
+            if (userData.family_relations) {
+              userData.family_relations.forEach((relation) => {
+                const checkbox = document.querySelector(
+                  `input[value="${relation}"]`
+                );
+                if (checkbox) {
+                  checkbox.checked = true;
+                  if (relation === "no_family") {
+                    const familyCheckboxes = document.querySelectorAll(
+                      'input[name="family_relations"]:not(#no_family)'
+                    );
+                    familyCheckboxes.forEach((cb) => (cb.disabled = true));
+                  }
+                }
+              });
+            }
+          }
+        } catch (error) {
+          console.error("사용자 정보 로드 중 오류:", error);
+        }
+      }
+
+      // 페이지 로드 시 사용자 정보 가져오기
+      loadUserProfile();
+    </script>
+  </body>
+</html>
